@@ -2,7 +2,7 @@ import { activeSub } from './effect'
 import { Link, link, propagate } from './system'
 
 enum ReactiveFlags {
-  IS_REF = '_v__isRef',
+  IS_REF = '__v_isRef',
 }
 
 /**
@@ -11,9 +11,14 @@ enum ReactiveFlags {
 class RefImpl {
   // 保存实际的值
   _value
-  // 保存关联关系
-  subs
-  subsTail;
+  /**
+   * 订阅者链表的头节点
+   */
+  subs: Link 
+  /**
+   * 订阅者链表的尾节点
+   */
+  subsTail: Link;
   // ref标记，证明是一个ref
   [ReactiveFlags.IS_REF] = true
   constructor(value) {
@@ -48,12 +53,19 @@ export function ref(value) {
 export function isRef(value) {
   return !!(value && value[ReactiveFlags.IS_REF])
 }
+/**
+ * 收集依赖，建立ref和effect关联关系的链表
+ * @param dep 
+ */
 function trackRef(dep) {
   if (activeSub) {
     link(dep, activeSub)
   }
 }
-
+/**
+ * 触发ref关联的effect重新执行
+ * @param dep 
+ */
 function triggerEffects(dep) {
   if (dep.subs) {
     propagate(dep.subs)
