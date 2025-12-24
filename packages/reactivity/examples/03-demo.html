@@ -19,12 +19,7 @@
         const flag = ref(true)
         const name = ref('范剑')
         const age = ref(18)
-        let count = 0
         effect(() => {
-            console.count('count')
-
-            if (count > 0) return
-            count++
             if (flag.value) {
                 app.innerHTML = name.value
             } else {

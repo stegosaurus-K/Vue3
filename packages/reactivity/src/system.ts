@@ -1,7 +1,7 @@
 /**
  * 依赖项
  */
-interface Dep {
+interface Dependency {
   //订阅者链表的头节点
   subs: Link | undefined
   // 订阅者链表的尾节点
@@ -23,11 +23,12 @@ export interface Link {
   prevSub: Link | undefined // 上一个节点
 
   // 依赖项
-  dep: Dep
+  dep: Dependency
 
   nextDep: Link | undefined
 }
 
+let linkPool: Link
 /**
  * 建立链表关系
  * @param dep
@@ -45,14 +46,26 @@ export function link(dep, sub) {
     sub.depsTail = nextDep
     return
   }
-
-  const newLink = {
-    sub,
-    dep,
-    nextDep,
-    nextSub: undefined,
-    prevSub: undefined,
+  let newLink
+  /**
+   * 看一下linkPool有没有，如果有，直接复用
+   */
+  if (linkPool) {
+    newLink = linkPool
+    linkPool = linkPool.nextDep
+    newLink.nextDep = nextDep
+    newLink.dep = dep
+    newLink.sub = sub
+  } else {
+    newLink = {
+      sub,
+      dep,
+      nextDep,
+      nextSub: undefined,
+      prevSub: undefined,
+    }
   }
+
   /**
    * 将链表节点和dep建立关联关系
    */
@@ -85,7 +98,10 @@ export function propagate(subs) {
   let link = subs
   const queueEffects = []
   while (link) {
-    queueEffects.push(link.sub)
+    const sub = link.sub
+    if (!sub.tracking) {
+      queueEffects.push(sub)
+    }
     link = link.nextSub
   }
   queueEffects.forEach(effect => effect.notify())
@@ -95,6 +111,7 @@ export function propagate(subs) {
  * @param sub
  */
 export function startTrack(sub) {
+  sub.tracking = true
   sub.depsTail = undefined
 }
 /**
@@ -102,6 +119,7 @@ export function startTrack(sub) {
  * @param sub
  */
 export function endTrack(sub) {
+  sub.tracking = false
   const depsTail = sub.depsTail
   /**
    * depsTail 有，并且depsTail还有nextDep，应该把他们的依赖关系清理掉
@@ -149,7 +167,8 @@ export function clearTracking(link: Link) {
 
     link.dep = link.sub = undefined
 
-    link.nextDep = undefined
+    link.nextDep = linkPool
+    linkPool = link
     link = nextDep
   }
 }

@@ -12,7 +12,7 @@ class ReactiveEffect {
    * 依赖项链表的尾节点
    */
   depsTail: Link | undefined
-
+  tracking = false
   constructor(public fn) {}
 
   run() {
