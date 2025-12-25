@@ -1,16 +1,16 @@
 import { hasChange, isObject } from '@vue/shared'
 import { activeSub } from './effect'
-import { Link, link, propagate } from './system'
+import { Dependency, Link, link, propagate } from './system'
 import { reactive } from './reactive'
 
-enum ReactiveFlags {
+export enum ReactiveFlags {
   IS_REF = '__v_isRef',
 }
 
 /**
  *
  */
-class RefImpl {
+class RefImpl implements Dependency{
   // 保存实际的值
   _value
   /**
@@ -64,7 +64,7 @@ export function isRef(value) {
  * 收集依赖，建立ref和effect关联关系的链表
  * @param dep
  */
-function trackRef(dep) {
+export function trackRef(dep) {
   if (activeSub) {
     link(dep, activeSub)
   }

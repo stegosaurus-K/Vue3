@@ -1,17 +1,19 @@
 /**
  * 依赖项
  */
-interface Dependency {
+export interface Dependency {
   //订阅者链表的头节点
   subs: Link | undefined
   // 订阅者链表的尾节点
   subsTail: Link | undefined
 }
-interface Sub {
+export interface Sub {
   //订阅者链表的头节点
   deps: Link | undefined
   // 订阅者链表的尾节点
   depsTail: Link | undefined
+
+  tracking: boolean
 }
 /**
  * 链表节点
@@ -90,6 +92,17 @@ export function link(dep, sub) {
   }
 }
 
+function processComputedUpdate(sub) {
+  /**
+   * 更新计算属性
+   * 1. 调用update
+   * 2. 通知subs链表上所有的sub，重新执行
+   */
+  if (sub.subs && sub.update()) {
+    propagate(sub.subs)
+  }
+}
+
 /**
  * 传播更新的函数
  * @param subs
@@ -99,8 +112,13 @@ export function propagate(subs) {
   const queueEffects = []
   while (link) {
     const sub = link.sub
-    if (!sub.tracking) {
-      queueEffects.push(sub)
+    if (!sub.tracking && !sub.dirty) {
+      sub.dirty = true
+      if ('update' in sub) {
+        processComputedUpdate(sub)
+      } else {
+        queueEffects.push(sub)
+      }
     }
     link = link.nextSub
   }
@@ -121,6 +139,8 @@ export function startTrack(sub) {
 export function endTrack(sub) {
   sub.tracking = false
   const depsTail = sub.depsTail
+  // 追踪完了，不脏了
+  sub.dirty = false
   /**
    * depsTail 有，并且depsTail还有nextDep，应该把他们的依赖关系清理掉
    * depsTail 没有，并且头节点有， 那就把所有的依赖关系都清理掉
