@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script type="module">
+        import { watch, reactive, computed } from '../dist/reactivity.esm.js'
+        // import { effect, ref, computed, reactive, watch } from '../../../node_modules/vue/dist/vue.esm-browser.prod.js'
+
+        const state = reactive({
+            a: {
+                b: 1,
+                c: {
+                    d: 1
+                }
+            }
+        })
+
+        watch(
+            state,
+            (newValue, oldValue) => {
+                console.log('newValue', newValue, oldValue)
+            },
+            {
+                deep: true
+            })
+
+        setTimeout(() => {
+            console.log('11')
+            state.a.c.d = 3
+        }, 1000)
+    </script>
+</body>
+
+</html>

@@ -6,7 +6,9 @@ export let activeSub
 export function setActiveSub(sub) {
   activeSub = sub
 }
-class ReactiveEffect implements Sub {
+export class ReactiveEffect implements Sub {
+  // 表示这个effect是否激活
+  active = true
   /**
    * 依赖项链表的头节点
    */
@@ -20,6 +22,9 @@ class ReactiveEffect implements Sub {
   constructor(public fn) {}
 
   run() {
+    if (!this.active) {
+      return this.fn()
+    }
     // 先将当前的effect保存起来，用来处理嵌套逻辑
     const prevSub = activeSub
 
@@ -46,6 +51,14 @@ class ReactiveEffect implements Sub {
    */
   notify() {
     this.scheduler()
+  }
+  stop() {
+    if (this.active) {
+      // 清理依赖
+      startTrack(this)
+      endTrack(this)
+      this.active = false
+    }
   }
 }
 
